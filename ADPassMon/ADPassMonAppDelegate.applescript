@@ -157,8 +157,10 @@ If you do not know your keychain password, enter your new password in the New an
     
     -- Check if running in a local account
     on localAccountCheck_(sender)
-        set accountLoc to (do shell script "dscl localhost read /Search/Users/$USER AuthenticationAuthority") as string
-        if "Active Directory" is in accountLoc or "NetLogon" is in accountLoc or "LocalCachedUser" is in accountLoc then
+    --  set accountLoc to (do shell script "dscl localhost read /Search/Users/$USER AuthenticationAuthority") as string
+    --  if "Active Directory" is in accountLoc or "NetLogon" is in accountLoc or "LocalCachedUser" is in accountLoc then
+        set accountLoc to (do shell script "/usr/bin/id") as string
+        if "\\" is in accountLoc then
             set my isLocalAccount to false
             log "Running under a network account."
         else
@@ -166,7 +168,7 @@ If you do not know your keychain password, enter your new password in the New an
             log "Running under a local account."
         end if
     end localAccountCheck_
-    
+
     -- Check & log the selected Behaviour
     on doSelectedBehaviourCheck_(sender)
         if selectedBehaviour is 1
@@ -1591,11 +1593,11 @@ Please choose your configuration options."
         regDefaults_(me) -- populate plist file with defaults (will not overwrite non-default settings))
         retrieveDefaults_(me) -- load defaults (from plist)
         localAccountCheck_(me)
-        if my isLocalAccount is false
+        if isLocalAccount is false
             startMeUp_(me)
-        else if my isLocalAccount is true and my runIfLocal is true
-            startMeUp_(me)
+        else if runIfLocal is true
             log "  Proceeding due to manual override."
+            startMeUp_(me)
         else
             log "  Stopping."
         end if
