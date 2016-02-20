@@ -1285,6 +1285,9 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
 
     -- Open Password Prompt window
     on showPasswordPromptWindow_(sender)
+        set oldPassword's stringValue to "" as string
+        set NewPassword's stringValue to "" as string
+        set VerifyPassword's stringValue to "" as string
         activate
         passwordPromptWindow's makeKeyAndOrderFront_(me)
         set passwordPromptWindow's level to 3
