@@ -87,7 +87,6 @@ If you do not know your keychain password, enter your new password in the New an
     property isHidden :                 false
     property isManualEnabled :          false
     property enableNotifications :      true
-    property enableKerbMinder :         false
     property prefsLocked :              false
     property launchAtLogin :            false
     property skipKerb :                 false
@@ -96,7 +95,6 @@ If you do not know your keychain password, enter your new password in the New an
     property passExpires :              true
     property goEasy :                   false
     property showChangePass :           false
-    property KerbMinderInstalled :      false
     property enablePasswordPromptWindowButton2 : false
     property firstPasswordCheckPassed : true
     property userPasswordChanged :      false
@@ -292,18 +290,6 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
             log "Skipping Keychain Lock state check..."
         end if
     end doKeychainLockCheck_
-    
-    -- Check to see if KerbMinder installed
-    on KerbMinderTest_(sender)
-        tell application "Finder"
-            if exists "/Library/Application Support/crankd/KerbMinder.py" as POSIX file
-                set my KerbMinderInstalled to true
-                log "  KerbMinder installed..."
-            else
-                set my KerbMinderInstalled to false
-            end if
-        end tell
-    end KerbMinderTest_
 
     -- Register plist default settings
     on regDefaults_(sender)
@@ -326,7 +312,6 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
                                             pwPolicy:pwPolicy, ¬
                                             pwPolicyButton:pwPolicyButton, ¬
                                             accTest:accTest, ¬
-                                            enableKerbMinder:enableKerbMinder, ¬
                                             launchAtLogin:launchAtLogin, ¬
                                             enableKeychainLockCheck:0, ¬
                                             selectedBehaviour:1, ¬
@@ -359,7 +344,6 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
         tell defaults to set my pwPolicy to objectForKey_("pwPolicy")
         tell defaults to set my pwPolicyButton to objectForKey_("pwPolicyButton")
         tell defaults to set my accTest to objectForKey_("accTest") as integer
-        tell defaults to set my enableKerbMinder to objectForKey_("enableKerbMinder")
         tell defaults to set my launchAtLogin to objectForKey_("launchAtLogin")
         tell defaults to set my enableKeychainLockCheck to objectForKey_("enableKeychainLockCheck") as integer
         tell defaults to set my selectedBehaviour to objectForKey_ ("selectedBehaviour") as integer
@@ -623,7 +607,7 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
             try
                 set thePassword to text returned of (display dialog "Password incorrect. Please try again:" default answer "" with icon 2 with hidden answer)
                 do shell script "/bin/echo '" & thePassword & "' | /usr/bin/kinit -l 24h -r 24h --password-file=STDIN"
-                display dialog "Kerboros ticket acquired." with icon 1 buttons {"OK"} default button 1
+                display dialog "Kerberos ticket acquired." with icon 1 buttons {"OK"} default button 1
                 doLionKerb_(me)
             on error
                 log "  Incorrect password. Skipping."
@@ -1400,20 +1384,6 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
             log "Enabled notifications."
         end if
     end toggleNotify_
-    
-    on toggleKerbMinder_(sender)
-        if my enableKerbMinder as boolean is true
-            set my enableKerbMinder to false
-            my statusMenu's itemWithTitle_("Use KerbMinder")'s setState_(0)
-            tell defaults to setObject_forKey_(enableKerbMinder, "enableKerbMinder")
-            log "Disabled KerbMinder."
-        else
-            set my enableKerbMinder to true
-            my statusMenu's itemWithTitle_("Use KerbMinder")'s setState_(1)
-            tell defaults to setObject_forKey_(enableKerbMinder, "enableKerbMinder")
-            log "Enabled KerbMinder."
-        end if
-    end toggleKerbMinder_
 
     -- Bound to Check Keychain items in menu and Prefs window
     on toggleKeychainLockCheck_(sender)
@@ -1461,8 +1431,6 @@ Enable it now?" with icon 2 buttons {"No","Yes"} default button 2)
         tell defaults to removeObjectForKey_("pwPolicy")
         tell defaults to removeObjectForKey_("pwPolicyButton")
         tell defaults to removeObjectForKey_("accTest")
-        tell defaults to removeObjectForKey_("enableKerbMinder")
-        tell defaults to removeObjectForKey_("enableKerbMinder")
         tell defaults to removeObjectForKey_("enableKeychainLockCheck")
         tell defaults to removeObjectForKey_("selectedBehaviour")
         tell defaults to removeObjectForKey_("isBehaviour2Enabled")
@@ -1502,16 +1470,6 @@ Please choose your configuration options."
         menuItem's setAction_("toggleNotify:")
         menuItem's setEnabled_(true)
         menuItem's setState_(enableNotifications as integer)
-        statusMenu's addItem_(menuItem)
-        menuItem's release()
-        
-        set menuItem to (my NSMenuItem's alloc)'s init
-        menuItem's setTitle_("Use KerbMinder")
-        menuItem's setTarget_(me)
-        menuItem's setAction_("toggleKerbMinder:")
-        menuItem's setEnabled_(true)
-        menuItem's setHidden_(not KerbMinderInstalled)
-        menuItem's setState_(enableKerbMinder as integer)
         statusMenu's addItem_(menuItem)
         menuItem's release()
         
@@ -1575,7 +1533,6 @@ Please choose your configuration options."
 
     -- Do processes necessary for app initiation
     on startMeUp_(sender)
-        KerbMinderTest_(me)
         notifySetup_(me)
         doSelectedBehaviourCheck_(me) -- Check for Selected Behaviour
         createMenu_(me)  -- build and display the status menu item
